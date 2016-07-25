@@ -11,21 +11,25 @@ import math
 # ROS messages.
 from sensor_msgs.msg import Imu
 from quat_to_euler.msg import Euler
+from geometry_msgs.msg import PoseStamped
 
 class QuatToEuler():
     def __init__(self):
         self.got_new_msg = False
         self.euler_msg = Euler()
+        self.pose_msg = PoseStamped()
 
         # Create subscribers and publishers.
-        sub_imu   = rospy.Subscriber("/imu/data", Imu, self.imu_callback)
-        pub_euler = rospy.Publisher("/imu/euler", Euler)
+        sub_imu   = rospy.Subscriber("imu/data", Imu, self.imu_callback)
+        pub_euler = rospy.Publisher("imu/euler", Euler, queue_size=10)
+        pub_pose = rospy.Publisher("imu/pose", PoseStamped, queue_size=10)
         rate = rospy.Rate(500)
         # Main while loop.
         while not rospy.is_shutdown():
             # Publish new data if we got a new message.
             if self.got_new_msg:
                 pub_euler.publish(self.euler_msg)
+                pub_pose.publish(self.pose_msg)
                 self.got_new_msg = False
             else:
                 rate.sleep()
@@ -43,6 +47,9 @@ class QuatToEuler():
         self.euler_msg.roll  = r*180/math.pi
         self.euler_msg.pitch = p*180/math.pi
         self.euler_msg.yaw   = y*180/math.pi
+
+        self.pose_msg.header = msg.header
+        self.pose_msg.pose.orientation = msg.orientation
 
 # Main function.    
 if __name__ == '__main__':
